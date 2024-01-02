@@ -1,7 +1,7 @@
 {
-  "name": "obsidian-sample-plugin",
-  "version": "1.0.0",
-  "description": "This is a sample plugin for Obsidian (https://obsidian.md)",
+  "name": "obsidian-pomodoro-task",
+  "version": "0.0.1",
+  "description": "Add a pomodoro clock icon after each task in the reading view. Clicking the icon will start the pomodoro timer, and the duration will be automatically recorded after the pomodoro session ends.",
   "main": "main.js",
   "scripts": {
     "dev": "node esbuild.config.mjs",
