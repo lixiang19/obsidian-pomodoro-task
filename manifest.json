@@ -5,7 +5,7 @@
 	"minAppVersion": "0.15.0",
 	"description": "Add a Pomodoro timer to the task.",
 	"author": "Obsidian",
-	"authorUrl": "https://obsidian.md",
-	"fundingUrl": "https://obsidian.md/pricing",
+	"authorUrl": "https://github.com/lixiang19/obsidian-pomodoro-task",
+	"fundingUrl": "",
 	"isDesktopOnly": false
 }
