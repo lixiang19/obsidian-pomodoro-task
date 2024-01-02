@@ -1,96 +1,76 @@
-# Obsidian Sample Plugin
+# obsidian-pomodoro-task
 
-This is a sample plugin for Obsidian (https://obsidian.md).
+Add a pomodoro clock icon after each task in the reading view. Clicking the icon will start the pomodoro timer, and the duration will be automatically recorded after the pomodoro session ends. The duration can be queried using the dataview plugin.
 
-This project uses Typescript to provide type checking and documentation.
-The repo depends on the latest plugin API (obsidian.d.ts) in Typescript Definition format, which contains TSDoc comments describing what it does.
+Supports task lists in Markdown format, kanban plugin, lists queried by the tasks plugin, and lists queried by the dataview plugin.
 
-**Note:** The Obsidian API is still in early alpha and is subject to change at any time!
+## Examples
 
-This sample plugin demonstrates some of the basic functionality the plugin API can do.
-- Adds a ribbon icon, which shows a Notice when clicked.
-- Adds a command "Open Sample Modal" which opens a Modal.
-- Adds a plugin setting tab to the settings page.
-- Registers a global click event and output 'click' to the console.
-- Registers a global interval which logs 'setInterval' to the console.
+### Native Markdown Task List
 
-## First time developing plugins?
+![Task List](./readme/1.png)
+![Pomodoro](./readme/2.png)
 
-Quick starting guide for new plugin devs:
+### Kanban Plugin
 
-- Check if [someone already developed a plugin for what you want](https://obsidian.md/plugins)! There might be an existing plugin similar enough that you can partner up with.
-- Make a copy of this repo as a template with the "Use this template" button (login to GitHub if you don't see it).
-- Clone your repo to a local development folder. For convenience, you can place this folder in your `.obsidian/plugins/your-plugin-name` folder.
-- Install NodeJS, then run `npm i` in the command line under your repo folder.
-- Run `npm run dev` to compile your plugin from `main.ts` to `main.js`.
-- Make changes to `main.ts` (or create new `.ts` files). Those changes should be automatically compiled into `main.js`.
-- Reload Obsidian to load the new version of your plugin.
-- Enable plugin in settings window.
-- For updates to the Obsidian API run `npm update` in the command line under your repo folder.
+![Kanban](./readme/3.png)
 
-## Releasing new releases
+### Tasks Plugin
 
-- Update your `manifest.json` with your new version number, such as `1.0.1`, and the minimum Obsidian version required for your latest release.
-- Update your `versions.json` file with `"new-plugin-version": "minimum-obsidian-version"` so older versions of Obsidian can download an older version of your plugin that's compatible.
-- Create new GitHub release using your new version number as the "Tag version". Use the exact version number, don't include a prefix `v`. See here for an example: https://github.com/obsidianmd/obsidian-sample-plugin/releases
-- Upload the files `manifest.json`, `main.js`, `styles.css` as binary attachments. Note: The manifest.json file must be in two places, first the root path of your repository and also in the release.
-- Publish the release.
+Cannot use short mode, need the reverse link to locate the task file
+![Tasks](./readme/4.png)
 
-> You can simplify the version bump process by running `npm version patch`, `npm version minor` or `npm version major` after updating `minAppVersion` manually in `manifest.json`.
-> The command will bump version in `manifest.json` and `package.json`, and add the entry for the new version to `versions.json`
+### Dataview Plugin
 
-## Adding your plugin to the community plugin list
+Use subheadings to locate the task file
+![Dataview](./readme/5.png)
 
-- Check https://github.com/obsidianmd/obsidian-releases/blob/master/plugin-review.md
-- Publish an initial version.
-- Make sure you have a `README.md` file in the root of your repo.
-- Make a pull request at https://github.com/obsidianmd/obsidian-releases to add your plugin.
+## Note
 
-## How to use
+**The method used to add duration is to first find the file, and then match the task text. If there are tasks with the same name in the same file, the duration will be added to the wrong task.**
+**Because the text matching uses includes, do not include other tasks completely in the task text. For example, if there are two tasks named "Test Task" and "Urgent Test Task", clicking "Test Task" will match "Urgent Test Task". It is better to name them "Normal Test Task" and "Urgent Test Task" to avoid overlapping text.**
+**If a better method is found to locate the corresponding task, it will be improved.**
 
-- Clone this repo.
-- Make sure your NodeJS is at least v16 (`node --version`).
-- `npm i` or `yarn` to install dependencies.
-- `npm run dev` to start compilation in watch mode.
+## Roadmap
 
-## Manually installing the plugin
+-   [ ] Support custom pomodoro duration
+-   [ ] Support custom pomodoro icon
+-   [ ] Better task querying and updating capabilities
 
-- Copy over `main.js`, `styles.css`, `manifest.json` to your vault `VaultFolder/.obsidian/plugins/your-plugin-id/`.
+# obsidian-pomodoro-task
 
-## Improve code quality with eslint (optional)
-- [ESLint](https://eslint.org/) is a tool that analyzes your code to quickly find problems. You can run ESLint against your plugin to find common bugs and ways to improve your code. 
-- To use eslint with this project, make sure to install eslint from terminal:
-  - `npm install -g eslint`
-- To use eslint to analyze this project use this command:
-  - `eslint main.ts`
-  - eslint will then create a report with suggestions for code improvement by file and line number.
-- If your source code is in a folder, such as `src`, you can use eslint with this command to analyze all files in that folder:
-  - `eslint .\src\`
+在阅读视图下每个任务后面加上番茄钟图标，点击图标可以开始番茄钟，番茄钟结束后会自动记录时长属性到任务后面。后续可以通过 dataview 插件查询任务的番茄钟时长。
+支持 md 任务列表、kanban 插件、tasks 插件查询的列表、dataview 查询的列表。
 
-## Funding URL
+## 例子
 
-You can include funding URLs where people who use your plugin can financially support it.
+### 原生 md 任务列表
 
-The simple way is to set the `fundingUrl` field to your link in your `manifest.json` file:
+![任务列表](./readme/1.png)
+![番茄钟](./readme/2.png)
 
-```json
-{
-    "fundingUrl": "https://buymeacoffee.com"
-}
-```
+### kanban 插件
 
-If you have multiple URLs, you can also do:
+![kanban](./readme/3.png)
 
-```json
-{
-    "fundingUrl": {
-        "Buy Me a Coffee": "https://buymeacoffee.com",
-        "GitHub Sponsor": "https://github.com/sponsors",
-        "Patreon": "https://www.patreon.com/"
-    }
-}
-```
+### tasks 插件
 
-## API Documentation
+不能使用 short mode，需要后面的反向链接来定位任务文件
+![tasks](./readme/4.png)
 
-See https://github.com/obsidianmd/obsidian-api
+### dataview 插件
+
+使用小标题来定位任务文件
+![dataview](./readme/5.png)
+
+## 注意
+
+**添加时长采用的方法是先寻找文件，接着匹配任务文字，如果在同一个文件内有同名任务，会导致时长添加的位置错误。**
+**因为匹配文字使用的是 includes，所以任务文字不要完全地包含其他任务。比如有两个任务，如果命名为：【测试任务、测试任务紧急】，会导致在点击《测试任务》的时候被匹配到《测试任务紧急》上，最好命名为【测试任务正常、测试任务紧急】这种无法相互包含的文字**
+**如果后续能找到更好的办法找到对应的任务，会改进**
+
+## roadmap
+
+-   [ ] 支持自定义番茄钟时长
+-   [ ] 支持自定义番茄钟图标
+-   [ ] 更好的任务查询及更新

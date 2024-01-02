@@ -61,8 +61,12 @@ export class TomatoTimerView extends ItemView {
 		if (lineNumber != -1) {
 			// 如果原来已经有[duration:: 25]，需要在这个基础上加上25
 			if (fileLines[lineNumber].includes('[duration::')) {
-				const duration = parseInt(fileLines[lineNumber].match(/\[duration:: (\d+)\]/)[1]);
-				fileLines[lineNumber] = fileLines[lineNumber].replace(/\[duration:: (\d+)\]/, `[duration:: ${duration + actualTimeElapsed}]`);
+				const durationString = fileLines[lineNumber].match(/\[duration:: (\d+)\]/)
+				if (durationString) {
+					const duration = parseInt(durationString[1]);
+					fileLines[lineNumber] = fileLines[lineNumber].replace(/\[duration:: (\d+)\]/, `[duration:: ${duration + actualTimeElapsed}]`);
+				}
+
 			} else {
 				fileLines[lineNumber] += `[duration:: ${actualTimeElapsed}]`;
 			}
@@ -77,7 +81,6 @@ export class TomatoTimerView extends ItemView {
 	}
 	// 在这里设置视图的初始内容
 	async onOpen() {
-
 		setTimeout(() => {
 			const taskText = this.getState().currentTask.taskText;
 			this.root = createRoot(this.containerEl.children[1]);
