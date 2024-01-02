@@ -1,6 +1,6 @@
 {
   "name": "obsidian-pomodoro-task",
-  "version": "0.0.1",
+  "version": "0.1.2",
   "description": "Add a pomodoro clock icon after each task in the reading view. Clicking the icon will start the pomodoro timer, and the duration will be automatically recorded after the pomodoro session ends.",
   "main": "main.js",
   "scripts": {
