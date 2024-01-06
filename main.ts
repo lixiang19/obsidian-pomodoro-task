@@ -6,16 +6,16 @@ import {
 	TomatoTimerView,
 	TypeCurrentTask,
 } from "./pomodoro";
-interface MyPluginSettings {
+interface PomodoroTaskPluginSettings {
 	mySetting: string;
 } //TODO: 设置项
 
-const DEFAULT_SETTINGS: MyPluginSettings = {
+const DEFAULT_SETTINGS: PomodoroTaskPluginSettings = {
 	mySetting: "default",
 };
 type MODE_TYPE = "md" | "kanban" | "tasks" | 'dataview';
-export default class MyPlugin extends Plugin {
-	settings: MyPluginSettings;
+export default class PomodoroTaskPlugin extends Plugin {
+	settings: PomodoroTaskPluginSettings;
 
 	async onload() {
 		await this.loadSettings();
@@ -46,7 +46,8 @@ export default class MyPlugin extends Plugin {
 			event.stopPropagation();
 			const type = target.getAttribute("data-type");
 			let taskText = "";
-			let file = this.app.workspace.getActiveFile();
+			let file = null;
+			file = this.app.workspace.getActiveFile()
 			const taskListItem = target.closest(".task-list-item");
 			// 获取taskText
 			switch (type) {
@@ -73,14 +74,14 @@ export default class MyPlugin extends Plugin {
 					if (domA) {
 						const dataPath = domA.getAttribute('data-href')
 						if (dataPath) {
-							file = this.app.vault.getAbstractFileByPath(dataPath) as TFile
+							file = this.app.vault.getAbstractFileByPath(dataPath)
 						}
 					}
 					break
 				default:
 					break;
 			}
-			if (file) {
+			if (file instanceof TFile) {
 				// 去除duration及后面的字
 				let cleanTaskText = taskText?.split("duration")[0];
 				// 去除番茄图标
