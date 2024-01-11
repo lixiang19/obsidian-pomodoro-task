@@ -37,7 +37,7 @@ function ReactView(props: {
 		<div className='pomodoro-task'> {props.taskText}</div>
 		<CountdownCircleTimer
 			isPlaying={isPlaying}
-			onComplete={() => { handleFinish(DURATION) }}
+			onComplete={() => { handleFinish(DURATION / 60) }}
 			onUpdate={(remainingTime) => {
 				{
 
