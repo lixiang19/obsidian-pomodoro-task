@@ -78,7 +78,16 @@ export class TomatoTimerView extends ItemView {
 		// 将修改后的内容写回文件
 		await this.app.vault.modify(taskInfo.file, fileLines.join('\n'));
 		new Notice('任务时长已添加。');
+		this.platformNotice()
+
 	}
+	platformNotice() {
+		const NOTIFICATION_TITLE = 'pomodoro'
+		const NOTIFICATION_BODY =
+			'Take a break'
+		new Notification(NOTIFICATION_TITLE, { body: NOTIFICATION_BODY })
+	}
+
 	// 在这里设置视图的初始内容
 	async onOpen() {
 		setTimeout(() => {
