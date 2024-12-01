@@ -1,42 +1,69 @@
 import {
-	Plugin, TFile,
+	Plugin, TFile, PluginSettingTab, Setting
 } from "obsidian";
 import {
 	TOMATO_TIMER_VIEW_TYPE,
 	TomatoTimerView,
 	TypeCurrentTask,
 } from "./pomodoro";
-interface PomodoroTaskPluginSettings {
-	mySetting: string;
-} //TODO: 设置项
+import {
+	PomodoroTaskPluginSettings,
+	DEFAULT_SETTINGS,
+	PomodoroSettingTab
+} from "./settings";
 
-const DEFAULT_SETTINGS: PomodoroTaskPluginSettings = {
-	mySetting: "default",
-};
-type MODE_TYPE = "md" | "kanban" | "tasks" | 'dataview';
 export default class PomodoroTaskPlugin extends Plugin {
 	settings: PomodoroTaskPluginSettings;
 
 	async onload() {
+		console.log('tamato-task出发了')
 		await this.loadSettings();
+
+		// 添加设置标签页
+		this.addSettingTab(new PomodoroSettingTab(this.app, this));
+
 		this.registerView(
 			TOMATO_TIMER_VIEW_TYPE,
-			(leaf) => new TomatoTimerView(leaf)
+			(leaf) => new TomatoTimerView(leaf, this)
 		);
-		this.app.workspace.on("layout-change", () => {
-			setTimeout(() => {
+	
+		this.registerEvent(
+			this.app.workspace.on("layout-change", () => {
 				this.addTimerButtonToKanban();
-			}, 300);
-		});
-		this.registerMarkdownPostProcessor((el: HTMLElement, context) => {
-			setTimeout(() => {
-				// 还需要等其他插件渲染完毕
-				this.addTimerButtonToTasks(el);
-			}, 300);
+			})
+		);
+		this.registerMarkdownPostProcessor((el: HTMLElement) => {
+			this.addTimerButtonToTasks(el);
 		});
 		this.registerDomEvent(document, "click", (event: MouseEvent) => {
 			this.handleTomatoButton(event);
 		}, true);
+		this.registerEvent(
+			this.app.workspace.on("file-open", () => {
+				this.addTimerButtonToKanban();
+			})
+		);
+
+	
+		
+		// 添加DOM变化监听
+		const observer = new MutationObserver(() => {
+			this.addTimerButtonToKanban();
+		});
+		
+		this.registerEvent(
+			this.app.workspace.on("layout-change", () => {
+				// 观察看板容器的变化
+				const kanbanContainer = document.querySelector('.kanban-plugin__board ');
+				if (kanbanContainer) {
+					observer.observe(kanbanContainer, {
+						childList: true,
+						subtree: true
+					});
+				}
+				this.addTimerButtonToKanban();
+			})
+		);
 	}
 	private handleTomatoButton(event: MouseEvent) {
 		const target = event.target as HTMLElement;
@@ -49,13 +76,15 @@ export default class PomodoroTaskPlugin extends Plugin {
 			let file = null;
 			file = this.app.workspace.getActiveFile()
 			const taskListItem = target.closest(".task-list-item");
+			let titleElement = null;
 			// 获取taskText
 			switch (type) {
 				case "md":
-					taskText = taskListItem!.textContent || '未获取';
+					taskText = taskListItem?.querySelector('.tasks-list-text')?.textContent || '未获取';
 					break;
 				case "kanban":
-					taskText = target.closest(".kanban-plugin__item-title-wrapper")!.textContent || '未获取';
+					titleElement = target.closest(".kanban-plugin__item-title-wrapper")?.querySelector('.kanban-plugin__item-title');
+					taskText = titleElement?.textContent || '未获取';
 					break;
 				case "tasks":
 					if (taskListItem) {
@@ -82,44 +111,43 @@ export default class PomodoroTaskPlugin extends Plugin {
 					break;
 			}
 			if (file instanceof TFile) {
-				// 去除duration及后面的字
-				let cleanTaskText = taskText?.split("duration")[0];
-				// 去除番茄图标
-				cleanTaskText = cleanTaskText?.replace("🍅", "");
-
 				// // 激活番茄时钟视图并传递任务文本
-				this.openPomodoro(cleanTaskText || "", file);
+				this.openPomodoro(taskText || "", file);
 			}else {
 				console.log('未找到文件')
 			}
 
 		}
 	}
-	private getFileAdaptTasks(pathName: string) {
-		const files = this.app.vault.getFiles();
-		let file = null;
-	
-		if (pathName.includes('.md')) {
-			file = this.findFileByPath(files, '/' + pathName);
-		} else if (pathName.includes('>')) {
-			const [fileName] = pathName.split('>');
-			const cleanFileName = fileName.trim();
-			file = this.findFileByBasename(files, cleanFileName);
-		} else {
-			file = this.findFileByBasename(files, pathName);
+	private getFileAdaptTasks(pathName: string): TFile | null {
+		if (!pathName?.trim()) {
+			return null;
 		}
-	
-		return file||null;
-	}
-	
-	private findFileByPath(files: TFile[], path: string) {
-		return files.find(file => file.path === path);
-	}
-	
-	private findFileByBasename(files: TFile[], basename: string) {
-		return files.find(file => file.basename === basename);
+
+		const cleanPath = pathName.trim();
+		
+		try {
+			// 处理包含 .md 的完整路径
+			if (cleanPath.endsWith('.md')) {
+				// 直接使用 getAbstractFileByPath 而不是遍历所有文件
+				const file = this.app.vault.getAbstractFileByPath(cleanPath.startsWith('/') ? cleanPath : `/${cleanPath}`);
+				return file instanceof TFile ? file : null;
+			}
+			
+			// 处理包含 '>' 的路径或直接文件名
+			const fileName = cleanPath.includes('>') 
+				? cleanPath.split('>')[0].trim() 
+				: cleanPath;
+				
+			// 使用 getMarkdownFiles() 并结合 cache API
+			return this.app.metadataCache.getFirstLinkpathDest(fileName, '');
+		} catch (error) {
+			console.error(`查找文件失败: ${error}`);
+			return null;
+		}
 	}
 	private openPomodoro(taskText: string, file: TFile) {
+		
 		const currentTask = {
 			taskText: taskText,
 			file,
@@ -128,20 +156,32 @@ export default class PomodoroTaskPlugin extends Plugin {
 		this.activateView(currentTask);
 	}
 	private async activateView(currentTask?: TypeCurrentTask) {
-		this.app.workspace.detachLeavesOfType(TOMATO_TIMER_VIEW_TYPE);
-
-		await this.app.workspace.getRightLeaf(false).setViewState({
-			type: TOMATO_TIMER_VIEW_TYPE,
-			active: true,
-			state: {
-				currentTask,
-			},
-		});
-		const leaf = this.app.workspace.getLeavesOfType(
-			TOMATO_TIMER_VIEW_TYPE
-		)[0];
-
-		this.app.workspace.revealLeaf(leaf);
+	
+		// 检查是否已存在番茄钟视图
+		const existingLeaf = this.app.workspace.getLeavesOfType(TOMATO_TIMER_VIEW_TYPE)[0];
+		
+		if (existingLeaf) {
+			// 如果已存在视图，直接激活并更新状态
+			await existingLeaf.setViewState({
+				type: TOMATO_TIMER_VIEW_TYPE,
+				active: true,
+				state: {
+					currentTask,
+				},
+			});
+			this.app.workspace.revealLeaf(existingLeaf);
+		} else {
+			// 如果不存在视图，创建新的
+			const leaf = this.app.workspace.getRightLeaf(false);
+			await leaf.setViewState({
+				type: TOMATO_TIMER_VIEW_TYPE,
+				active: true,
+				state: {
+					currentTask,
+				},
+			});
+			this.app.workspace.revealLeaf(leaf);
+		}
 	}
 	onunload() { }
 
@@ -171,29 +211,33 @@ export default class PomodoroTaskPlugin extends Plugin {
 		const button = this.createButton(type);
 		taskItem.appendChild(button);
 	}
-	addTimerButtonToKanban() {
-		const kanbanDom = document.querySelector(".kanban-plugin")
-		if (kanbanDom) {
-			const list = kanbanDom.querySelectorAll(
-				".kanban-plugin__item-title-wrapper	"
-			);
-			list.forEach((taskItem) => {
-				this.addTomato(taskItem as HTMLElement, 'kanban');
-			})
-		}
-	}
 	private addTimerButtonToTasks(el: HTMLElement): void {
-		const ancestor = el.closest('.task-list-item');
-
-		if (ancestor) {
-			if (ancestor.querySelector('.task-extras')) {
-			
-				this.addTomato(ancestor as HTMLElement, 'tasks');
-			} else if (ancestor.classList.contains('dataview')) {
-				this.addTomato(ancestor as HTMLElement, 'dataview');
-			} else {
-				this.addTomato(ancestor as HTMLElement, 'md');
-			}
+		
+		const taskItem = el.closest('.task-list-item');
+		if (!taskItem || taskItem.querySelector('.tomato-timer-button')) {
+			return;
 		}
+
+		let type: MODE_TYPE = 'md';
+		if (taskItem.querySelector('.task-extras')) {
+			type = 'tasks';
+		} else if (taskItem.classList.contains('dataview')) {
+			type = 'dataview';
+		}
+
+		this.addTomato(taskItem as HTMLElement, type);
 	}
+	private addTimerButtonToKanban() {
+		const kanbanItems = document.querySelectorAll(
+			".kanban-plugin__item-title-wrapper"
+		);
+		
+		kanbanItems.forEach((item) => {
+			if (!item.querySelector('.tomato-timer-button')) {
+				this.addTomato(item as HTMLElement, 'kanban');
+			}
+		});
+	}
+
+
 }

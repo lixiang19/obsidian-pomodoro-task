@@ -1,9 +1,9 @@
 {
-	"id": "pomodoro-task",
-	"name": "pomodoro task",
-	"version": "0.1.5",
+	"id": "tamato-task",
+	"name": "tamato task",
+	"version": "0.1.0",
 	"minAppVersion": "0.15.0",
-	"description": "Add a tomato timer to the task list and record the duration.",
+	"description": "Add a toma.",
 	"author": "Obsidian",
 	"authorUrl": "https://github.com/lixiang19",
 	"fundingUrl": "",
