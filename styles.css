@@ -1,18 +1,38 @@
 .tomato-timer-button {
 	margin-left: 8px;
 	cursor: pointer;
-	background-color: var(--interactive-accent);
-	color: white;
+	background: none;
+	color: var(--text-normal);
 	border: none;
 	padding: 3px 6px;
-	border-radius: 3px;
-	box-shadow: var(--shadow-elevation-low);
-	transition: background-color 0.3s ease;
+	transition: all 0.2s ease;
+	font-weight: 500;
+	letter-spacing: 0.5px;
+	position: relative;
+
+}
+
+.tomato-timer-button:after {
+	content: '';
+	position: absolute;
+	width: 0;
+	height: 2px;
+	bottom: 0;
+	left: 0;
+	background-color: var(--text-normal);
+	transition: width 0.3s ease;
 }
 
 .tomato-timer-button:hover {
-	background-color: var(--interactive-accent-hover);
+	color: var(--text-accent);
+	
 }
+
+.tomato-timer-button:hover:after {
+	width: 100%;
+}
+
+
 
 .pomodoro-box {
 	display: flex;

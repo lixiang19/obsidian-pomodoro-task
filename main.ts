@@ -1,5 +1,6 @@
 import {
-	Plugin, TFile, PluginSettingTab, Setting
+	Plugin, TFile, PluginSettingTab, Setting,
+	setIcon
 } from "obsidian";
 import {
 	TOMATO_TIMER_VIEW_TYPE,
@@ -11,6 +12,8 @@ import {
 	DEFAULT_SETTINGS,
 	PomodoroSettingTab
 } from "./settings";
+
+type MODE_TYPE = 'md' | 'tasks' | 'kanban' | 'dataview';
 
 export default class PomodoroTaskPlugin extends Plugin {
 	settings: PomodoroTaskPluginSettings;
@@ -66,8 +69,8 @@ export default class PomodoroTaskPlugin extends Plugin {
 		);
 	}
 	private handleTomatoButton(event: MouseEvent) {
+		console.log('handleTomatoButton出发了',event)
 		const target = event.target as HTMLElement;
-
 		if (target.matches(".tomato-timer-button")) {
 			event.preventDefault();
 			event.stopPropagation();
@@ -196,11 +199,19 @@ export default class PomodoroTaskPlugin extends Plugin {
 	async saveSettings() {
 		await this.saveData(this.settings);
 	}
-	createButton(type: MODE_TYPE): HTMLButtonElement {
-		const button = document.createElement("button");
-		button.innerText = "🍅";
-		button.classList.add("tomato-timer-button");
+	createButton(type: MODE_TYPE): HTMLElement {
+		const button = document.createElement("div");
+		button.classList.add("tomato-timer-button", "clickable-icon");
 		button.setAttribute("data-type", type);
+		
+		// 创建图标容器
+		const iconContainer = document.createElement("div");
+		iconContainer.classList.add("timer-icon");
+		iconContainer.classList.add("tomato-timer-button-icon");
+		iconContainer.style.pointerEvents = "none";
+		setIcon(iconContainer, "hourglass");
+		
+		button.appendChild(iconContainer);
 		return button;
 	}
 
