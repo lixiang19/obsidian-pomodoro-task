@@ -62,7 +62,7 @@ function ReactView(props: {
 	onStop: (actualTimeElapsed: number) => void;
 	autoStart?: boolean;
 }) {
-	const DURATION = props.duration * 5;
+	const DURATION = props.duration * 60;
 	const [isPlaying, setIsPlaying] = useState(false);
 	const [key, setKey] = useState(0);
 	const [actualTimeElapsed, setActualTimeElapsed] = useState(0);
@@ -138,7 +138,7 @@ function ReactView(props: {
 								...buttonStyles.new,
 							}}
 						>
-							新计时
+							开始
 						</div>
 					</div> :
 					<div className='pomodoro-action' style={{ display: 'flex', justifyContent: 'center', gap: '10px' }}>

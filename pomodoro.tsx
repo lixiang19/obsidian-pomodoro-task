@@ -49,7 +49,7 @@ export class TomatoTimerView extends ItemView {
 
 	// 添加生成唯一ID的方法
 	private generateTaskId(): string {
-		return Date.now().toString(36) + Math.random().toString(36).substr(2);
+		return Math.random().toString(36).substring(2, 15);
 	}
 
 	// 添加标记任务的方法
@@ -77,9 +77,9 @@ export class TomatoTimerView extends ItemView {
 
 		// 添加任务ID标记
 		fileLines[lineNumber] = fileLines[lineNumber] + ` [tid::${taskId}]`;
-		// await this.app.vault.modify(file, fileLines.join('\n'));
+		await this.app.vault.modify(file, fileLines.join('\n'));
 
-		// return taskId;
+		return taskId;
 	}
 
 	// 添加状态变化监听
@@ -95,8 +95,18 @@ export class TomatoTimerView extends ItemView {
 		result: ViewStateResult
 	): Promise<void> {
 		await super.setState(state, result);
-		this.currentTask = state.currentTask;
 
+		// 如果有新的任务，且没有taskId，则标记任务
+		if (state.currentTask && !state.currentTask.taskId) {
+			try {
+				const taskId = await this.markTaskWithId(state.currentTask.file, state.currentTask.taskText);
+				state.currentTask.taskId = taskId;
+			} catch (error) {
+				new Notice('标记任务失败：' + error.message);
+			}
+		}
+
+		this.currentTask = state.currentTask;
 		// 触发所有状态变化监听器
 		this.stateChangeCallbacks.forEach(callback => callback());
 	}
