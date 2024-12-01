@@ -17,6 +17,7 @@ type MODE_TYPE = 'md' | 'tasks' | 'kanban' | 'dataview';
 
 export default class PomodoroTaskPlugin extends Plugin {
 	settings: PomodoroTaskPluginSettings;
+	kanbanObserver: MutationObserver | null;
 
 	async onload() {
 		console.log('tamato-task出发了')
@@ -33,6 +34,7 @@ export default class PomodoroTaskPlugin extends Plugin {
 		this.registerEvent(
 			this.app.workspace.on("layout-change", () => {
 				this.addTimerButtonToKanban();
+				this.setupKanbanObserver();
 			})
 		);
 		this.registerMarkdownPostProcessor((el: HTMLElement) => {
@@ -44,30 +46,9 @@ export default class PomodoroTaskPlugin extends Plugin {
 				this.addTimerButtonToKanban();
 			})
 		);
-
-	
-		
-		// 添加DOM变化监听
-		const observer = new MutationObserver(() => {
-			this.addTimerButtonToKanban();
-		});
-		
-		this.registerEvent(
-			this.app.workspace.on("layout-change", () => {
-				// 观察看板容器的变化
-				const kanbanContainer = document.querySelector('.kanban-plugin__board ');
-				if (kanbanContainer) {
-					observer.observe(kanbanContainer, {
-						childList: true,
-						subtree: true
-					});
-				}
-				this.addTimerButtonToKanban();
-			})
-		);
 	}
 	private handleTomatoButton(event: MouseEvent) {
-		console.log('handleTomatoButton出发了',event)
+		
 		const target = event.target as HTMLElement;
 		if (target.matches(".tomato-timer-button")) {
 			event.preventDefault();
@@ -128,19 +109,20 @@ export default class PomodoroTaskPlugin extends Plugin {
 		const cleanPath = pathName.trim();
 		
 		try {
-			// 处理包含 .md 的完整路径
+			// 如果是完整路径（包含.md），直接使用 getAbstractFileByPath
 			if (cleanPath.endsWith('.md')) {
-				// 直接使用 getAbstractFileByPath 而不是遍历所有文件
-				const file = this.app.vault.getAbstractFileByPath(cleanPath.startsWith('/') ? cleanPath : `/${cleanPath}`);
+				const file = this.app.vault.getAbstractFileByPath(
+					cleanPath.startsWith('/') ? cleanPath : `/${cleanPath}`
+				);
 				return file instanceof TFile ? file : null;
 			}
 			
-			// 处理包含 '>' 的路径或直接文件名
+			// 处理简单文件名或带有 '>' 的路径
 			const fileName = cleanPath.includes('>') 
 				? cleanPath.split('>')[0].trim() 
 				: cleanPath;
 				
-			// 使用 getMarkdownFiles() 并结合 cache API
+			// 使用 getLinkpath 来解析文件链接
 			return this.app.metadataCache.getFirstLinkpathDest(fileName, '');
 		} catch (error) {
 			console.error(`查找文件失败: ${error}`);
@@ -157,32 +139,17 @@ export default class PomodoroTaskPlugin extends Plugin {
 		this.activateView(currentTask);
 	}
 	private async activateView(currentTask?: TypeCurrentTask) {
-	
-		// 检查是否已存在番茄钟视图
-		const existingLeaf = this.app.workspace.getLeavesOfType(TOMATO_TIMER_VIEW_TYPE)[0];
+		const workspace = this.app.workspace;
+		const leaf = workspace.getLeavesOfType(TOMATO_TIMER_VIEW_TYPE)[0] 
+			|| workspace.getRightLeaf(false);
+			
+		await leaf.setViewState({
+			type: TOMATO_TIMER_VIEW_TYPE,
+			active: true,
+			state: { currentTask }
+		});
 		
-		if (existingLeaf) {
-			// 如果已存在视图，直接激活并更新状态
-			await existingLeaf.setViewState({
-				type: TOMATO_TIMER_VIEW_TYPE,
-				active: true,
-				state: {
-					currentTask,
-				},
-			});
-			this.app.workspace.revealLeaf(existingLeaf);
-		} else {
-			// 如果不存在视图，创建新的
-			const leaf = this.app.workspace.getRightLeaf(false);
-			await leaf.setViewState({
-				type: TOMATO_TIMER_VIEW_TYPE,
-				active: true,
-				state: {
-					currentTask,
-				},
-			});
-			this.app.workspace.revealLeaf(leaf);
-		}
+		workspace.revealLeaf(leaf);
 	}
 	onunload() { }
 
@@ -244,15 +211,29 @@ export default class PomodoroTaskPlugin extends Plugin {
 		this.addTomato(taskItem as HTMLElement, type);
 	}
 	private addTimerButtonToKanban() {
-		const kanbanItems = document.querySelectorAll(
-			".kanban-plugin__item-title-wrapper"
-		);
+		const board = document.querySelector('.kanban-plugin__board');
+		if (!board) return;
 		
-		kanbanItems.forEach((item) => {
-			if (!item.querySelector('.tomato-timer-button')) {
-				this.addTomato(item as HTMLElement, 'kanban');
+		const items = board.querySelectorAll('.kanban-plugin__item-title-wrapper:not(:has(.tomato-timer-button))');
+		items.forEach(item => this.addTomato(item as HTMLElement, 'kanban'));
+	}
+	private setupKanbanObserver() {
+		if (this.kanbanObserver) {
+			this.kanbanObserver.disconnect();
+		}
+		
+		const kanbanContainer = document.querySelector('.kanban-plugin__board');
+		if (kanbanContainer) {
+			if (!this.kanbanObserver) {
+				this.kanbanObserver = new MutationObserver(() => {
+					this.addTimerButtonToKanban();
+				});
 			}
-		});
+			this.kanbanObserver.observe(kanbanContainer, {
+				childList: true,
+				subtree: true
+			});
+		}
 	}
 
 
