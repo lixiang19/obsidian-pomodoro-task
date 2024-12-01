@@ -20,7 +20,7 @@ export default class PomodoroTaskPlugin extends Plugin {
 	kanbanObserver: MutationObserver | null;
 
 	async onload() {
-		console.log('tamato-task出发了')
+	
 		await this.loadSettings();
 
 		// 添加设置标签页
