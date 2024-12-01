@@ -38,9 +38,7 @@ export default class PomodoroTaskPlugin extends Plugin {
 		this.registerMarkdownPostProcessor((el: HTMLElement) => {
 			this.addTimerButtonToTasks(el);
 		});
-		this.registerDomEvent(document, "click", (event: MouseEvent) => {
-			this.handleTomatoButton(event);
-		}, true);
+		// 
 		this.registerEvent(
 			this.app.workspace.on("file-open", () => {
 				this.addTimerButtonToKanban();
@@ -210,6 +208,13 @@ export default class PomodoroTaskPlugin extends Plugin {
 		iconContainer.classList.add("tomato-timer-button-icon");
 		iconContainer.style.pointerEvents = "none";
 		setIcon(iconContainer, "hourglass");
+		
+		// 直接在按钮创建时绑定点击事件
+		button.addEventListener("click", (event: MouseEvent) => {
+			event.preventDefault();
+			event.stopPropagation();
+			this.handleTomatoButton(event);
+		});
 		
 		button.appendChild(iconContainer);
 		return button;
