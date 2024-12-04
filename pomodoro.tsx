@@ -17,7 +17,7 @@ export class TomatoTimerView extends ItemView {
 	currentTask: TypeCurrentTask;
 	plugin: PomodoroTaskPlugin;
 	isBreakTime = false;
-	autoStart = false
+	autoStart = true
 	private audioBuffers: { [key: string]: AudioBuffer } = {};
 	private audioContext: AudioContext | null = null;
 	private stateChangeCallbacks: (() => void)[] = [];
@@ -54,20 +54,16 @@ export class TomatoTimerView extends ItemView {
 
 	// 添加标记任务的方法
 	private async markTaskWithId(file: TFile, taskText: string): Promise<string> {
-		const taskId = this.generateTaskId();
 		const fileContents = await this.app.vault.read(file);
 		const fileLines = fileContents.split(/\r?\n/);
 
 		// 优化任务匹配逻辑
 		const lineNumber = fileLines.findIndex(line => {
-
 			// 对于markdown任务，确保是任务格式
-			if (line.startsWith('- [ ]') || line.startsWith('- [x]')) { // 这个也可能是完成的任务
+			if (line.startsWith('- [ ]') || line.startsWith('- [x]')) {
 				const taskContent = line.substring(5).trim();
-
 				return taskContent === taskText.trim();
 			}
-
 			return line === taskText.trim();
 		});
 
@@ -75,7 +71,17 @@ export class TomatoTimerView extends ItemView {
 			throw new Error('无法找到任务行');
 		}
 
-		// 添加任务ID标记
+		// 检查是否已有tid标记
+		if (fileLines[lineNumber].includes('[tid::')) {
+			// 如果已有tid，提取并返回现有的tid
+			const match = fileLines[lineNumber].match(/\[tid::([^\]]+)\]/);
+			if (match) {
+				return match[1];
+			}
+		}
+
+		// 如果没有tid，添加新的任务ID标记
+		const taskId = this.generateTaskId();
 		fileLines[lineNumber] = fileLines[lineNumber] + ` [tid::${taskId}]`;
 		await this.app.vault.modify(file, fileLines.join('\n'));
 
@@ -87,6 +93,29 @@ export class TomatoTimerView extends ItemView {
 		this.stateChangeCallbacks.push(callback);
 	}
 
+	// 添加清理旧任务的方法
+	private async cleanupOldTask() {
+		if (this.currentTask?.taskId) {
+			try {
+				const fileContents = await this.app.vault.read(this.currentTask.file);
+				const fileLines = fileContents.split(/\r?\n/);
+
+				// 查找并清理旧的任务ID
+				const lineNumber = fileLines.findIndex(line =>
+					line.includes(`[tid::${this.currentTask.taskId}]`)
+				);
+
+				if (lineNumber !== -1) {
+					fileLines[lineNumber] = fileLines[lineNumber].replace(/\s?\[tid::[^\]]+\]/, '');
+					await this.app.vault.modify(this.currentTask.file, fileLines.join('\n'));
+				}
+			} catch (error) {
+				console.error('清理旧任务ID失败:', error);
+			}
+		}
+	}
+
+	// 修改 setState 方法
 	override async setState(
 		state: {
 			taskText: string;
@@ -94,6 +123,14 @@ export class TomatoTimerView extends ItemView {
 		},
 		result: ViewStateResult
 	): Promise<void> {
+		// 如果有新任务且与当前任务不同，清理旧任务
+		if (state.currentTask &&
+			this.currentTask?.taskId &&
+			(state.currentTask.taskText !== this.currentTask.taskText ||
+				state.currentTask.file.path !== this.currentTask.file.path)) {
+			await this.cleanupOldTask();
+		}
+
 		await super.setState(state, result);
 
 		// 如果有新的任务，且没有taskId，则标记任务
