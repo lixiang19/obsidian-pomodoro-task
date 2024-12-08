@@ -172,9 +172,8 @@ export default class PomodoroTaskPlugin extends Plugin {
 		// 创建图标容器
 		const iconContainer = document.createElement("div");
 		iconContainer.classList.add("timer-icon");
-		iconContainer.classList.add("tomato-timer-button-icon");
-		iconContainer.style.pointerEvents = "none";
-		setIcon(iconContainer, "hourglass");
+	
+		setIcon(iconContainer, "alarm-clock-plus");
 		
 		// 直接在按钮创建时绑定点击事件
 		button.addEventListener("click", (event: MouseEvent) => {

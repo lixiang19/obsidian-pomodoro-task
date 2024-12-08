@@ -17,7 +17,7 @@ export class TomatoTimerView extends ItemView {
 	currentTask: TypeCurrentTask;
 	plugin: PomodoroTaskPlugin;
 	isBreakTime = false;
-	autoStart = true
+	autoStart = false
 	private audioBuffers: { [key: string]: AudioBuffer } = {};
 	private audioContext: AudioContext | null = null;
 	private stateChangeCallbacks: (() => void)[] = [];
@@ -321,7 +321,7 @@ export class TomatoTimerView extends ItemView {
 
 	// 添加 getIcon 方法
 	getIcon(): string {
-		return "hourglass"; // 或者使用其他 Lucide 图标名称
+		return "alarm-clock-plus"; // 或者使用其他 Lucide 图标名称
 	}
 }
 
