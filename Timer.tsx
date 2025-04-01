@@ -91,6 +91,8 @@ function ReactView(props: {
 	const handleCancel = () => {
 		setIsPlaying(false);
 		setKey(prevKey => prevKey + 1); // incrementing key will reset the timer
+		setNeedNext(true);
+		setIsInitial(false);
 	};
 	const handleNew = () => {
 		setIsPlaying(true);
